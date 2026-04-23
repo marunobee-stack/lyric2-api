@@ -11,15 +11,19 @@ function stripLRC(lrc) {
 }
 
 function parseLRC(lrc) {
-  return lrc.split('\n').map(line => {
-    const match = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
-    if (!match) return null;
+  return lrc
+    .replace(/\]\s*\[/g, "]\n[") // ←ここ追加
+    .split('\n')
+    .map(line => {
+      const match = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+      if (!match) return null;
 
-    return {
-      time: parseInt(match[1]) * 60 + parseFloat(match[2]),
-      text: match[3].trim()
-    };
-  }).filter(Boolean);
+      return {
+        time: parseInt(match[1]) * 60 + parseFloat(match[2]),
+        text: match[3].trim()
+      };
+    })
+    .filter(Boolean);
 }
 
 export default async function handler(req, res) {
