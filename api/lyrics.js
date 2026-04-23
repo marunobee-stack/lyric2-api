@@ -1,4 +1,18 @@
-export default async function handler(req, res) {
+function stripLRC(lrc) {
+  return lrc.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '');
+}
+
+function parseLRC(lrc) {
+  return lrc.split('\n').map(line => {
+    const match = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+    if (!match) return null;
+
+    return {
+      time: parseInt(match[1]) * 60 + parseFloat(match[2]),
+      text: match[3].trim()
+    };
+  }).filter(Boolean);
+}export default async function handler(req, res) {
   try {
     const { title, artist } = req.query;
 
@@ -46,7 +60,13 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Lyrics not found" });
     }
 
-    return res.json({ lyrics });
+    const parsed = parseLRC(lyrics);
+
+return res.json({
+  raw: lyrics,
+  plain: stripLRC(lyrics),
+  lines: parsed
+});
 
   } catch (err) {
     console.error(err);
