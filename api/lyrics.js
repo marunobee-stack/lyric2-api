@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     console.log("TITLE:", title);
     console.log("ARTIST:", finalArtist);
 
-    // ←ここも修正（queryをここで作る）
+    console.log("START FETCH");
     const query = `${title} ${finalArtist}`;
 
     let lyrics = null;
@@ -66,8 +66,7 @@ export default async function handler(req, res) {
     // ========= ② Netease fallback =========
     if (!lyrics) {
       try {
-        let query = `${title} ${finalArtist}`;
-
+        let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
         let r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(query)}`);
         let j1 = await r1.json();
 
