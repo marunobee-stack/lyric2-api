@@ -7,7 +7,7 @@ function toLRC(lines) {
 }
 
 function stripLRC(lrc) {
-  return lrc.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '');
+  return lrc.replace(/\[\d+:\d+\.\d+\]/g, '');
 }
 
 function parseLRC(lrc) {
