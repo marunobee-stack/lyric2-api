@@ -113,9 +113,7 @@ export default async function handler(req, res) {
     // ========= レスポンス =========
     console.log("FINAL LYRICS:", lrc?.slice(0, 50));
     
-    return res.json({
-  lyrics: lrc.split("\\n").join("\n")
-});
+    return res.send(lrc);
 
   } catch (err) {
     console.error(err);
