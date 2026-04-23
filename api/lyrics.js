@@ -1,3 +1,80 @@
+// ========= Musixmatch =========
+let cachedToken = null;
+let tokenTime = 0;
+
+async function getMxmToken() {
+  if (cachedToken && Date.now() - tokenTime < 10 * 60 * 1000) {
+    return cachedToken;
+  }
+
+  const r = await fetch(
+    "https://apic-desktop.musixmatch.com/ws/1.1/token.get?app_id=web-desktop-app-v1.0"
+  );
+  const j = await r.json();
+
+  cachedToken = j?.message?.body?.user_token;
+  tokenTime = Date.now();
+
+  return cachedToken;
+}
+
+async function fetchMusixmatch(title, artist) {
+  try {
+    const token = await getMxmToken();
+
+    const headers = {
+      "User-Agent": "Mozilla/5.0",
+      "Accept": "application/json",
+      "Referer": "https://www.musixmatch.com/",
+      "Origin": "https://www.musixmatch.com"
+    };
+
+    const base = "https://apic-desktop.musixmatch.com/ws/1.1";
+
+    // ===== 検索 =====
+    const searchUrl =
+      `${base}/track.search?` +
+      `q_track=${encodeURIComponent(title)}` +
+      `&q_artist=${encodeURIComponent(artist)}` +
+      `&page_size=3` +
+      `&page=1` +
+      `&s_track_rating=desc` +
+      `&app_id=web-desktop-app-v1.0` +
+      `&usertoken=${token}`;
+
+    const r = await fetch(searchUrl, { headers });
+    const j = await r.json();
+
+    const tracks = j?.message?.body?.track_list;
+    if (!tracks || tracks.length === 0) return null;
+
+    const track = tracks[0].track;
+
+    // ===== 歌詞取得 =====
+    const lyricUrl =
+      `${base}/track.subtitle.get?` +
+      `track_id=${track.track_id}` +
+      `&subtitle_format=lrc` +
+      `&app_id=web-desktop-app-v1.0` +
+      `&usertoken=${token}`;
+
+    const r2 = await fetch(lyricUrl, { headers });
+    const j2 = await r2.json();
+
+    let subtitle = j2?.message?.body?.subtitle?.subtitle_body;
+
+    // LRCじゃないやつ弾く
+    if (subtitle && !subtitle.includes("[")) {
+      subtitle = null;
+    }
+
+    return subtitle || null;
+
+  } catch (e) {
+    console.log("Musixmatch error:", e);
+    return null;
+  }
+}
 function toLRC(lines) {
   return lines.map(line => {
     const min = Math.floor(line.time / 60);
@@ -46,6 +123,12 @@ export default async function handler(req, res) {
     const query = `${finalTitle} ${finalArtist}`;
 
     let lyrics = null;
+
+    // ========= ① Musixmatch（最優先） =========
+if (!lyrics) {
+  lyrics = await fetchMusixmatch(finalTitle, finalArtist);
+  console.log("MUSIXMATCH:", !!lyrics);
+}
 
     // ========= ① LRCLIB（第一候補） =========
     if (!lyrics) {
