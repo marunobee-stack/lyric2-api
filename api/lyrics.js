@@ -5,6 +5,7 @@ function toLRC(lines) {
     return `[${String(min).padStart(2, "0")}:${sec}]${line.text}`;
   }).join("\n");
 }
+
 function stripLRC(lrc) {
   return lrc.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '');
 }
@@ -19,76 +20,96 @@ function parseLRC(lrc) {
       text: match[3].trim()
     };
   }).filter(Boolean);
-}export default async function handler(req, res) {
+}
+
+export default async function handler(req, res) {
   try {
     const { title, artist } = req.query;
 
-if (!title || !artist) {
-  return res.status(400).json({ error: "Missing params" });
-}
+    if (!title) {
+      return res.status(400).json({ error: "Missing title" });
+    }
 
-const cleanTitle = title.split(" - ")[0].trim();
-const cleanArtist = artist.split(",")[0].trim();
-
-const query = `${cleanTitle} ${cleanArtist}`;
-
-const baseQuery = `${cleanTitle} ${cleanArtist}`;
-const queryList = [
-  baseQuery,
-  `${cleanTitle} 歌詞`,
-  cleanTitle
-];
+    console.log("TITLE:", title);
+    console.log("ARTIST:", artist);
 
     let lyrics = null;
 
-    // LRCLIB
-for (const q of queryList) {
-  try {
-    const r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(q)}`);
-    const data = await r.json();
-
-    if (Array.isArray(data) && data.length > 0) {
-      lyrics = data[0].syncedLyrics || data[0].plainLyrics;
-      if (lyrics) break;
-    }
-  } catch (e) {
-    console.log("LRCLIB error:", e);
-  }
-}
-
-    // fallback
-if (!lyrics) {
-  for (const q of queryList) {
+    // ========= ① LRCLIB（第一候補） =========
     try {
-      const r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(q)}`);
-      const j1 = await r1.json();
+      let query = `${title} ${artist || ""}`;
+      let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
+      let data = await r.json();
 
-      const songs = j1?.result?.songs;
-      if (songs && songs.length > 0) {
-        const id = songs[0].id;
-
-        const r2 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/lyric?id=${id}`);
-        const j2 = await r2.json();
-
-        lyrics = j2?.lrc?.lyric;
-        if (lyrics) break;
+      if (Array.isArray(data) && data.length > 0) {
+        lyrics = data[0].syncedLyrics || data[0].plainLyrics;
       }
-    } catch (e) {
-      console.log("Netease error:", e);
-    }
-  }
-}
 
+      // 👇 ヒットしなかったらタイトルだけで再検索
+      if (!lyrics) {
+        r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title)}`);
+        data = await r.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          lyrics = data[0].syncedLyrics || data[0].plainLyrics;
+        }
+      }
+
+    } catch (e) {
+      console.log("LRCLIB error:", e);
+    }
+
+    // ========= ② Netease fallback =========
+    if (!lyrics) {
+      try {
+        let query = `${title} ${artist || ""}`;
+
+        let r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(query)}`);
+        let j1 = await r1.json();
+
+        let songs = j1?.result?.songs;
+
+        if ((!songs || songs.length === 0) && title) {
+          // タイトルだけでもう一回
+          r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(title)}`);
+          j1 = await r1.json();
+          songs = j1?.result?.songs;
+        }
+
+        if (songs && songs.length > 0) {
+          const id = songs[0].id;
+
+          const r2 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/lyric?id=${id}`);
+          const j2 = await r2.json();
+
+          lyrics = j2?.lrc?.lyric;
+        }
+
+      } catch (e) {
+        console.log("Netease error:", e);
+      }
+    }
+
+    // ========= 見つからなかった =========
     if (!lyrics) {
       return res.status(404).json({ error: "Lyrics not found" });
     }
 
-const parsed = parseLRC(lyrics);
-const lrc = toLRC(parsed);
+    // ========= パース =========
+    const parsed = parseLRC(lyrics);
 
-return res.json({
-  lyrics: lrc
-});
+    let lrc = lyrics;
+
+    if (parsed.length > 0) {
+      lrc = toLRC(parsed);
+    }
+
+    // ========= レスポンス =========
+    return res.json({
+      lyrics: lrc,              // ← アプリはこれ使う（重要）
+      plain: stripLRC(lrc),    // ← 普通の歌詞
+      lines: parsed            // ← タイム付き配列
+    });
 
   } catch (err) {
     console.error(err);
