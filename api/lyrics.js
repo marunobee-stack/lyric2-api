@@ -42,7 +42,6 @@ export default async function handler(req, res) {
 
     // ========= ① LRCLIB（第一候補） =========
     try {
-      let query = `${title} ${finalArtist}`;
       let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
       let data = await r.json();
 
