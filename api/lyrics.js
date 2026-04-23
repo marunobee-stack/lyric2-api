@@ -25,18 +25,21 @@ function parseLRC(lrc) {
 export default async function handler(req, res) {
   try {
     // ←ここを完全に置き換え
-    const { title, artist, singer } = req.query;
+    const { title, name, artist, singer } = req.query;
+    // 👇ここ超重要
+    const finalTitle = title || name || "";
     const finalArtist = artist || singer || "";
-
-    if (!title) {
+    
+    if (!finalTitle) {
       return res.status(400).json({ error: "Missing title" });
-    }
+}
 
-    console.log("TITLE:", title);
+    console.log("TITLE:", finalTitle);
     console.log("ARTIST:", finalArtist);
+    console.log("RAW:", req.query);
 
     console.log("START FETCH");
-    const query = `${title} ${finalArtist}`;
+    const query = `${finalTitle} ${finalArtist}`;
 
     let lyrics = null;
 
@@ -51,7 +54,7 @@ export default async function handler(req, res) {
 
       // 👇 ヒットしなかったらタイトルだけで再検索
       if (!lyrics) {
-        r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title)}`);
+        r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(finalTitle)}`);
         data = await r.json();
 
         if (Array.isArray(data) && data.length > 0) {
@@ -72,9 +75,9 @@ export default async function handler(req, res) {
 
         let songs = j1?.result?.songs;
 
-        if ((!songs || songs.length === 0) && title) {
+        if ((!songs || songs.length === 0) && finalTitle) {
           // タイトルだけでもう一回
-          r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(title)}`);
+          r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(finalTitle)}`);
           j1 = await r1.json();
           songs = j1?.result?.songs;
         }
