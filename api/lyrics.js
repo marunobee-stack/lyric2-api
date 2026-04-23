@@ -46,12 +46,19 @@ export default async function handler(req, res) {
     // ========= ① LRCLIB（第一候補） =========
     if (!lyrics) {
       try {
+        console.log("QUERY:", query);
+        
         let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title)}`);
         let data = await r.json();
+
+        console.log("LRCLIB RESULT:", data?.length);
         
         if (Array.isArray(data) && data.length > 0) {
           lyrics = data[0].syncedLyrics || data[0].plainLyrics;
         }
+
+        console.log("LYRICS FOUND?", !!lyrics);
+        
       } catch (e) {
         console.log("LRCLIB fallback error:", e);
       }
