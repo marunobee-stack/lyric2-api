@@ -112,10 +112,8 @@ export default async function handler(req, res) {
     console.log("FINAL LYRICS:", lrc?.slice(0, 50));
     
     return res.json({
-      lyrics: lrc,              // ← アプリはこれ使う（重要）
-      plain: stripLRC(lrc),    // ← 普通の歌詞
-      lines: parsed            // ← タイム付き配列
-    });
+  lyrics: lrc.split("\\n").join("\n")
+});
 
   } catch (err) {
     console.error(err);
