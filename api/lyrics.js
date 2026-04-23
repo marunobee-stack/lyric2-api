@@ -26,42 +26,56 @@ function parseLRC(lrc) {
     if (!title || !artist) {
       return res.status(400).json({ error: "Missing params" });
     }
+ 
+const cleanTitle = title.split(" - ")[0].trim();
+const cleanArtist = artist.split(",")[0].trim();
 
-    const query = `${title} ${artist}`;
+const baseQuery = `${cleanTitle} ${cleanArtist}`;
+const queryList = [
+  baseQuery,
+  `${cleanTitle} 歌詞`,
+  cleanTitle
+];
 
     let lyrics = null;
 
     // LRCLIB
-    try {
-      const r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
-      const data = await r.json();
+for (const q of queryList) {
+  try {
+    const r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(q)}`);
+    const data = await r.json();
 
-      if (Array.isArray(data) && data.length > 0) {
-        lyrics = data[0].syncedLyrics || data[0].plainLyrics;
-      }
-    } catch (e) {
-      console.log("LRCLIB error:", e);
+    if (Array.isArray(data) && data.length > 0) {
+      lyrics = data[0].syncedLyrics || data[0].plainLyrics;
+      if (lyrics) break;
     }
+  } catch (e) {
+    console.log("LRCLIB error:", e);
+  }
+}
 
     // fallback
-    if (!lyrics) {
-      try {
-        const r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(query)}`);
-        const j1 = await r1.json();
+if (!lyrics) {
+  for (const q of queryList) {
+    try {
+      const r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(q)}`);
+      const j1 = await r1.json();
 
-        const songs = j1?.result?.songs;
-        if (songs && songs.length > 0) {
-          const id = songs[0].id;
+      const songs = j1?.result?.songs;
+      if (songs && songs.length > 0) {
+        const id = songs[0].id;
 
-          const r2 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/lyric?id=${id}`);
-          const j2 = await r2.json();
+        const r2 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/lyric?id=${id}`);
+        const j2 = await r2.json();
 
-          lyrics = j2?.lrc?.lyric;
-        }
-      } catch (e) {
-        console.log("Netease error:", e);
+        lyrics = j2?.lrc?.lyric;
+        if (lyrics) break;
       }
+    } catch (e) {
+      console.log("Netease error:", e);
     }
+  }
+}
 
     if (!lyrics) {
       return res.status(404).json({ error: "Lyrics not found" });
