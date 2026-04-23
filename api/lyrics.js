@@ -67,12 +67,11 @@ function parseLRC(lrc) {
       return res.status(404).json({ error: "Lyrics not found" });
     }
 
-    const parsed = parseLRC(lyrics);
+const parsed = parseLRC(lyrics);
+const lrc = toLRC(parsed);
 
 return res.json({
-  raw: lyrics,
-  plain: stripLRC(lyrics),
-  lines: parsed
+  lyrics: lrc
 });
 
   } catch (err) {
