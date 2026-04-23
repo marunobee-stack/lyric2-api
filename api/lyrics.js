@@ -114,7 +114,7 @@ export default async function handler(req, res) {
       lrc = toLRC(parsed);
     }
     
-    lrc = lrc.replace(/\]\s*\[/g);
+    lrc = lrc.replace(/\]\s*\[/g, "]\n[");
 
     // ========= レスポンス =========
     console.log("FINAL LYRICS:", lrc?.slice(0, 50));
