@@ -1,4 +1,3 @@
-```js
 export default async function handler(req, res) {
   try {
     const { title, artist } = req.query;
@@ -9,9 +8,9 @@ export default async function handler(req, res) {
 
     const query = `${title} ${artist}`;
 
-    // ---- LRCLIB ----
     let lyrics = null;
 
+    // LRCLIB
     try {
       const r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
       const data = await r.json();
@@ -23,7 +22,7 @@ export default async function handler(req, res) {
       console.log("LRCLIB error:", e);
     }
 
-    // ---- Netease fallback ----
+    // fallback
     if (!lyrics) {
       try {
         const r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(query)}`);
@@ -50,8 +49,7 @@ export default async function handler(req, res) {
     return res.json({ lyrics });
 
   } catch (err) {
-    console.error("FATAL:", err);
+    console.error(err);
     return res.status(500).json({ error: "Server crashed" });
   }
 }
-```
