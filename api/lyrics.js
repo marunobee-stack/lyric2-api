@@ -103,6 +103,8 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Lyrics not found" });
     }
 
+    lyrics = lyrics.replace(/\]\s*\[/g, "]\n[");
+
     // ========= パース =========
     const parsed = parseLRC(lyrics);
 
@@ -113,8 +115,6 @@ export default async function handler(req, res) {
     if (parsed.length > 0) {
       lrc = toLRC(parsed);
     }
-    
-    lrc = lrc.replace(/\]\s*\[/g, "]\n[");
 
     // ========= レスポンス =========
     console.log("FINAL LYRICS:", lrc?.slice(0, 50));
