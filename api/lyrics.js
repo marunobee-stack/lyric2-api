@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       try {
         console.log("QUERY:", query);
         
-        let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title)}`);
+        let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
         let data = await r.json();
 
         console.log("LRCLIB RESULT:", data?.length);
@@ -102,6 +102,8 @@ export default async function handler(req, res) {
     // ========= パース =========
     const parsed = parseLRC(lyrics);
 
+    console.log("PARSED:", parsed.length);
+    console.log("PARSED SAMPLE:", parsed[0]);
     let lrc = lyrics;
 
     if (parsed.length > 0) {
