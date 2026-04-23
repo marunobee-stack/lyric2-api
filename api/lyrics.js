@@ -102,6 +102,8 @@ export default async function handler(req, res) {
     if (!lyrics) {
       return res.status(404).json({ error: "Lyrics not found" });
     }
+    
+    lyrics = lyrics.replace(/\]\s*\[/g, "]\n[");
 
     // ========= パース =========
     const parsed = parseLRC(lyrics);
