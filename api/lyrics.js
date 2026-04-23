@@ -44,26 +44,17 @@ export default async function handler(req, res) {
     let lyrics = null;
 
     // ========= ① LRCLIB（第一候補） =========
-    try {
-      let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
-      let data = await r.json();
-
-      if (Array.isArray(data) && data.length > 0) {
-        lyrics = data[0].syncedLyrics || data[0].plainLyrics;
-      }
-
-      // 👇 ヒットしなかったらタイトルだけで再検索
-      if (!lyrics) {
-        r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(finalTitle)}`);
-        data = await r.json();
-
+    if (!lyrics) {
+      try {
+        let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(title)}`);
+        let data = await r.json();
+        
         if (Array.isArray(data) && data.length > 0) {
           lyrics = data[0].syncedLyrics || data[0].plainLyrics;
         }
+      } catch (e) {
+        console.log("LRCLIB fallback error:", e);
       }
-
-    } catch (e) {
-      console.log("LRCLIB error:", e);
     }
 
     // ========= ② Netease fallback =========
