@@ -1,3 +1,10 @@
+function toLRC(lines) {
+  return lines.map(line => {
+    const min = Math.floor(line.time / 60);
+    const sec = (line.time % 60).toFixed(2).padStart(5, "0");
+    return `[${String(min).padStart(2, "0")}:${sec}]${line.text}`;
+  }).join("\n");
+}
 function stripLRC(lrc) {
   return lrc.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '');
 }
