@@ -24,20 +24,25 @@ function parseLRC(lrc) {
 
 export default async function handler(req, res) {
   try {
-    const { title, artist } = req.query;
+    // ←ここを完全に置き換え
+    const { title, artist, singer } = req.query;
+    const finalArtist = artist || singer || "";
 
     if (!title) {
       return res.status(400).json({ error: "Missing title" });
     }
 
     console.log("TITLE:", title);
-    console.log("ARTIST:", artist);
+    console.log("ARTIST:", finalArtist);
+
+    // ←ここも修正（queryをここで作る）
+    const query = `${title} ${finalArtist}`;
 
     let lyrics = null;
 
     // ========= ① LRCLIB（第一候補） =========
     try {
-      let query = `${title} ${artist || ""}`;
+      let query = `${title} ${finalArtist}`;
       let r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(query)}`);
       let data = await r.json();
 
@@ -62,7 +67,7 @@ export default async function handler(req, res) {
     // ========= ② Netease fallback =========
     if (!lyrics) {
       try {
-        let query = `${title} ${artist || ""}`;
+        let query = `${title} ${finalArtist}`;
 
         let r1 = await fetch(`https://music.xianqiao.wang/neteaseapiv2/search?keywords=${encodeURIComponent(query)}`);
         let j1 = await r1.json();
