@@ -3,7 +3,7 @@ function toLRC(lines) {
     const min = Math.floor(line.time / 60);
     const sec = (line.time % 60).toFixed(2).padStart(5, "0");
     return `[${String(min).padStart(2, "0")}:${sec}]${line.text}`;
-  }).join("\n");
+  }).join("\n"); // ←ここが超重要
 }
 
 function stripLRC(lrc) {
@@ -109,6 +109,8 @@ export default async function handler(req, res) {
     if (parsed.length > 0) {
       lrc = toLRC(parsed);
     }
+    
+    lrc = lrc.replace(/\s*\[/g, "\n[");
 
     // ========= レスポンス =========
     console.log("FINAL LYRICS:", lrc?.slice(0, 50));
