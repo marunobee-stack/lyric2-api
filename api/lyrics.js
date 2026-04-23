@@ -23,12 +23,14 @@ function parseLRC(lrc) {
   try {
     const { title, artist } = req.query;
 
-    if (!title || !artist) {
-      return res.status(400).json({ error: "Missing params" });
-    }
- 
+if (!title || !artist) {
+  return res.status(400).json({ error: "Missing params" });
+}
+
 const cleanTitle = title.split(" - ")[0].trim();
 const cleanArtist = artist.split(",")[0].trim();
+
+const query = `${cleanTitle} ${cleanArtist}`;
 
 const baseQuery = `${cleanTitle} ${cleanArtist}`;
 const queryList = [
