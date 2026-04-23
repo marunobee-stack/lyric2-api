@@ -103,7 +103,10 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Lyrics not found" });
     }
     
-    lyrics = lyrics.replace(/\]\s*\[/g, "]\n[");
+    lrc = lrc
+  .replace(/\r/g, "")          // 変な改行除去
+  .replace(/\s*\[/g, "\n[")    // ←これが本命
+  .trim();
 
     // ========= パース =========
     const parsed = parseLRC(lyrics);
@@ -116,10 +119,7 @@ export default async function handler(req, res) {
       lrc = toLRC(parsed);
     }
     
-    lrc = lrc
-  .replace(/\r/g, "")          // 変な改行除去
-  .replace(/\s*\[/g, "\n[")    // ←これが本命
-  .trim();
+    lrc = lrc.replace(/\s*\[/g, "\n[");
 
     // ========= レスポンス =========
     console.log("FINAL LYRICS:", lrc?.slice(0, 50));
