@@ -1,3 +1,10 @@
+res.setHeader("Content-Type", "application/json");
+res.setHeader("Content-Disposition", "attachment; filename=lyrics.json");
+return res.json({
+  raw: lyrics,
+  plain: stripLRC(lyrics),
+  lines: parsed
+});
 function stripLRC(lrc) {
   return lrc.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, '');
 }
